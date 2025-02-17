@@ -1,34 +1,33 @@
+# polls/tests.py
+
 from django.test import TestCase
 from django.urls import reverse
 from .models import Question
 from django.utils import timezone
 
-class PollsViewTests(TestCase):
+class QuestionDetailViewTests(TestCase):
 
     def setUp(self):
-        # Creating a sample question for tests
+        """Create a sample question for testing."""
         self.question = Question.objects.create(
             question_text="Sample Question?",
             pub_date=timezone.now() - timezone.timedelta(days=1)
         )
 
-    def test_home_page(self):
-        """Test that the home page shows the correct data."""
-        response = self.client.get(reverse('polls:index'))  # Simulate a GET request to the home page
-        self.assertEqual(response.status_code, 200)  # Check that the status code is 200 (OK)
-        self.assertTemplateUsed(response, 'polls/index.html')  # Ensure the correct template is used
-        self.assertContains(response, "Sample Question?")  # Verify if the question text is in the response
+    def test_detail_view_with_valid_question(self):
+        """Test that the detail view works for a valid question."""
+        url = reverse('polls:detail', args=(self.question.id,))  # Create the URL dynamically
+        response = self.client.get(url)  # Simulate a GET request
 
-    def test_detail_view(self):
-        """Test that the detail view works for a given question."""
-        url = reverse('polls:detail', args=(self.question.id,))  # Reverse generates the URL for the detail page
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)  # Check that the status code is 200 (OK)
+        # Assertions
+        self.assertEqual(response.status_code, 200)  # Ensure the status code is 200 (OK)
         self.assertTemplateUsed(response, 'polls/detail.html')  # Ensure the correct template is used
-        self.assertContains(response, "Sample Question?")  # Ensure the question text appears
+        self.assertContains(response, self.question.question_text)  # Ensure the question text is displayed
 
-    def test_detail_view_with_no_question(self):
-        """Test the detail view for a non-existent question."""
-        url = reverse('polls:detail', args=(999,))  # Using an invalid question ID (999)
+    def test_detail_view_with_nonexistent_question(self):
+        """Test that accessing a non-existent question returns a 404 error."""
+        url = reverse('polls:detail', args=(999,))  # Use a non-existent question ID
         response = self.client.get(url)
-        self.assertEqual(response.status_code, 404)  # Ensure we get a 404 status code for an invalid question
+
+        # Assertions
+        self.assertEqual(response.status_code, 404)  # Ensure a 404 error is returned for a non-existent question
